@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "494072021424",
+    "project_id": "tailormate-50f52",
+    "storage_bucket": "tailormate-50f52.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:494072021424:android:1818f1aaedeb2337659675",
+        "android_client_info": {
+          "package_name": "com.example.tailormate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "494072021424-3jla5n4juajsnrvb5bdpjkb26drld2a4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tailormate",
+            "certificate_hash": "80185713f498c9c60305f844109f02b3193883c9"
+          }
+        },
+        {
+          "client_id": "494072021424-p16gbtgm5cpevkd9mfa5sgofc2hosa1i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB31ABWquUfR82Uf7EU1BST93I6KB5DKl4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "494072021424-p16gbtgm5cpevkd9mfa5sgofc2hosa1i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
