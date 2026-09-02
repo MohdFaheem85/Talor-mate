@@ -5,6 +5,7 @@ import 'package:tailormate/features/customers/presentation/controllers/customer_
 import '../../../../core/constants/constants.dart';
 import '../../../../core/routes/app_pages.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/theme/theme_service.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -20,6 +21,11 @@ class DashboardPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('TailorMate'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.tune_outlined),
+            tooltip: 'Measurement Settings',
+            onPressed: () => Get.toNamed(AppRoutes.measurementSettings),
+          ),
           Obx(() {
             final themeService = Get.find<ThemeService>();
             return IconButton(
@@ -49,12 +55,13 @@ class DashboardPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const OfflineBanner(),
                 // Welcome header
                 Row(
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       backgroundImage: dashboardCtrl.userPhotoUrl != null
                           ? NetworkImage(dashboardCtrl.userPhotoUrl!)
                           : null,
@@ -231,7 +238,7 @@ class DashboardPage extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                            backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                             child: Text(
                               customer.name[0].toUpperCase(),
                               style: TextStyle(

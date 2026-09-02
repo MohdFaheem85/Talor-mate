@@ -9,6 +9,8 @@ import '../../features/customers/presentation/pages/add_edit_customer_page.dart'
 import '../../features/customers/presentation/pages/customer_detail_page.dart';
 import '../../features/measurements/presentation/pages/add_edit_measurement_page.dart';
 import '../../features/measurements/presentation/pages/measurement_detail_page.dart';
+import '../../features/measurements/presentation/pages/measurement_settings_page.dart';
+import '../../features/measurements/presentation/pages/clothing_type_fields_page.dart';
 
 class AppRoutes {
   static const splash = '/splash';
@@ -19,6 +21,8 @@ class AppRoutes {
   static const customerDetail = '/customers/detail';
   static const addMeasurement = '/measurements/add';
   static const measurementDetail = '/measurements/detail';
+  static const measurementSettings = '/measurements/settings';
+  static const clothingTypeFields = '/measurements/clothing-type-fields';
 }
 
 class AuthMiddleware extends GetMiddleware {
@@ -72,6 +76,16 @@ class AppPages {
     GetPage(
       name: AppRoutes.measurementDetail,
       page: () => const MeasurementDetailPage(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.measurementSettings,
+      page: () => const MeasurementSettingsPage(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.clothingTypeFields,
+      page: () => const ClothingTypeFieldsPage(),
       middlewares: [AuthMiddleware()],
     ),
   ];

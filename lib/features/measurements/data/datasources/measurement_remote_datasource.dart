@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/measurement_model.dart';
 
 abstract class MeasurementRemoteDataSource {
@@ -24,9 +25,12 @@ class MeasurementRemoteDataSourceImpl implements MeasurementRemoteDataSource {
   Stream<List<MeasurementModel>> getMeasurements(String userId, String customerId) {
     return _measurementsCollection(userId, customerId)
         .orderBy('createdAt', descending: true)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map((snapshot) {
       return snapshot.docs.map((doc) => MeasurementModel.fromSnapshot(doc)).toList();
+    }).handleError((error) {
+      debugPrint('MeasurementRemoteDataSource: stream error: $error');
+      return <MeasurementModel>[];
     });
   }
 
@@ -37,8 +41,15 @@ class MeasurementRemoteDataSourceImpl implements MeasurementRemoteDataSource {
     MeasurementModel measurement,
   ) async {
     try {
-      await _measurementsCollection(userId, customerId).add(measurement.toCreateMap());
+      final docRef = _measurementsCollection(userId, customerId).doc();
+      await docRef.set(measurement.toCreateMap()).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('MeasurementRemoteDataSource: Write queued in local offline cache.');
+        },
+      );
     } catch (e) {
+      debugPrint('addMeasurement error: $e');
       throw Exception('Failed to add measurement: $e');
     }
   }
@@ -52,8 +63,15 @@ class MeasurementRemoteDataSourceImpl implements MeasurementRemoteDataSource {
     try {
       await _measurementsCollection(userId, customerId)
           .doc(measurement.id)
-          .update(measurement.toUpdateMap());
+          .update(measurement.toUpdateMap())
+          .timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('MeasurementRemoteDataSource: Update queued in local offline cache.');
+        },
+      );
     } catch (e) {
+      debugPrint('updateMeasurement error: $e');
       throw Exception('Failed to update measurement: $e');
     }
   }
@@ -65,8 +83,17 @@ class MeasurementRemoteDataSourceImpl implements MeasurementRemoteDataSource {
     String measurementId,
   ) async {
     try {
-      await _measurementsCollection(userId, customerId).doc(measurementId).delete();
+      await _measurementsCollection(userId, customerId)
+          .doc(measurementId)
+          .delete()
+          .timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('MeasurementRemoteDataSource: Delete queued in local offline cache.');
+        },
+      );
     } catch (e) {
+      debugPrint('deleteMeasurement error: $e');
       throw Exception('Failed to delete measurement: $e');
     }
   }

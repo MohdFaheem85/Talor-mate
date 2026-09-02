@@ -6,6 +6,9 @@ import '../../domain/usecases/sign_in_with_google.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/observe_auth_state.dart';
 import '../../../../core/routes/app_pages.dart';
+import '../../../customers/presentation/controllers/customer_controller.dart';
+import '../../../measurements/presentation/controllers/clothing_type_controller.dart';
+import '../../../measurements/presentation/controllers/measurement_controller.dart';
 
 class AuthController extends GetxController {
   final SignInWithGoogle signInWithGoogleUseCase;
@@ -81,6 +84,18 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     try {
       isLoading.value = true;
+
+      // Proactively cancel all active Firestore snapshot listeners BEFORE revoking auth credentials
+      if (Get.isRegistered<CustomerController>()) {
+        Get.find<CustomerController>().clearData();
+      }
+      if (Get.isRegistered<ClothingTypeController>()) {
+        Get.find<ClothingTypeController>().clearData();
+      }
+      if (Get.isRegistered<MeasurementController>()) {
+        Get.find<MeasurementController>().clearData();
+      }
+
       await signOutUseCase();
       // Successful logout is handled automatically by the ever() listener
     } catch (e) {

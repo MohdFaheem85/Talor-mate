@@ -7,6 +7,7 @@ import '../../domain/usecases/add_customer.dart';
 import '../../domain/usecases/update_customer.dart';
 import '../../domain/usecases/delete_customer.dart';
 import 'package:tailormate/features/authentication/presentation/controllers/auth_controller.dart';
+import 'package:tailormate/features/measurements/presentation/controllers/measurement_controller.dart';
 
 class CustomerController extends GetxController {
   final GetCustomers getCustomersUseCase;
@@ -57,10 +58,7 @@ class CustomerController extends GetxController {
           },
         );
       } else {
-        _customersSubscription?.cancel();
-        _customersSubscription = null;
-        allCustomers.clear();
-        filteredCustomers.clear();
+        clearData();
       }
     });
 
@@ -83,9 +81,16 @@ class CustomerController extends GetxController {
     debounce(searchQuery, (_) => _filterCustomers(), time: const Duration(milliseconds: 300));
   }
 
+  void clearData() {
+    _customersSubscription?.cancel();
+    _customersSubscription = null;
+    allCustomers.clear();
+    filteredCustomers.clear();
+  }
+
   @override
   void onClose() {
-    _customersSubscription?.cancel();
+    clearData();
     nameController.dispose();
     phoneController.dispose();
     emailController.dispose();
@@ -110,6 +115,7 @@ class CustomerController extends GetxController {
   }
 
   void initForm(CustomerEntity? customer) {
+    isLoading.value = false;
     if (customer != null) {
       nameController.text = customer.name;
       phoneController.text = customer.phone;
@@ -224,5 +230,21 @@ class CustomerDetailPageController extends GetxController {
 
   void updateCustomer(CustomerEntity updated) {
     customer.value = updated;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (Get.isRegistered<MeasurementController>()) {
+      Get.find<MeasurementController>().loadHistory(customer.value.id);
+    }
+  }
+
+  @override
+  void onClose() {
+    if (Get.isRegistered<MeasurementController>()) {
+      Get.find<MeasurementController>().cancelHistorySubscription();
+    }
+    super.onClose();
   }
 }

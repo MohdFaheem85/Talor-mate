@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'core/theme/theme.dart';
 import 'core/theme/theme_service.dart';
+import 'core/services/sync_status_service.dart';
 import 'core/routes/app_pages.dart';
 
 // Authentication Layer Imports
@@ -37,6 +38,21 @@ import 'features/measurements/domain/usecases/update_measurement.dart';
 import 'features/measurements/domain/usecases/delete_measurement.dart';
 import 'features/measurements/presentation/controllers/measurement_controller.dart';
 
+// Clothing Types & Custom Fields Imports
+import 'features/measurements/data/datasources/clothing_type_remote_datasource.dart';
+import 'features/measurements/data/repositories/clothing_type_repository_impl.dart';
+import 'features/measurements/domain/repositories/clothing_type_repository.dart';
+import 'features/measurements/domain/usecases/get_clothing_types.dart';
+import 'features/measurements/domain/usecases/add_clothing_type.dart';
+import 'features/measurements/domain/usecases/archive_clothing_type.dart';
+import 'features/measurements/domain/usecases/initialize_defaults.dart';
+import 'features/measurements/domain/usecases/get_measurement_fields.dart';
+import 'features/measurements/domain/usecases/add_measurement_field.dart';
+import 'features/measurements/domain/usecases/update_measurement_field.dart';
+import 'features/measurements/domain/usecases/delete_measurement_field.dart';
+import 'features/measurements/domain/usecases/toggle_field_active.dart';
+import 'features/measurements/presentation/controllers/clothing_type_controller.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -61,6 +77,9 @@ void main() async {
 }
 
 void _setupDependencyInjection() {
+  // 0. Sync Status Service
+  Get.put(SyncStatusService(), permanent: true);
+
   // 1. Authentication Dependencies
   final authDataSource = Get.put<AuthRemoteDataSource>(
     AuthRemoteDataSourceImpl(),
@@ -107,7 +126,41 @@ void _setupDependencyInjection() {
     permanent: true,
   );
 
-  // 3. Measurement Dependencies
+  // 3. Clothing Types & Fields Dependencies
+  final clothingTypeDataSource = Get.put<ClothingTypeRemoteDataSource>(
+    ClothingTypeRemoteDataSourceImpl(),
+    permanent: true,
+  );
+  final clothingTypeRepository = Get.put<ClothingTypeRepository>(
+    ClothingTypeRepositoryImpl(remoteDataSource: clothingTypeDataSource),
+    permanent: true,
+  );
+  final getClothingTypes = GetClothingTypes(clothingTypeRepository);
+  final addClothingType = AddClothingType(clothingTypeRepository);
+  final archiveClothingType = ArchiveClothingType(clothingTypeRepository);
+  final initializeDefaults = InitializeDefaults(clothingTypeRepository);
+  final getMeasurementFields = GetMeasurementFields(clothingTypeRepository);
+  final addMeasurementField = AddMeasurementField(clothingTypeRepository);
+  final updateMeasurementField = UpdateMeasurementField(clothingTypeRepository);
+  final deleteMeasurementField = DeleteMeasurementField(clothingTypeRepository);
+  final toggleFieldActive = ToggleFieldActive(clothingTypeRepository);
+
+  Get.put(
+    ClothingTypeController(
+      getClothingTypesUseCase: getClothingTypes,
+      addClothingTypeUseCase: addClothingType,
+      archiveClothingTypeUseCase: archiveClothingType,
+      initializeDefaultsUseCase: initializeDefaults,
+      getMeasurementFieldsUseCase: getMeasurementFields,
+      addMeasurementFieldUseCase: addMeasurementField,
+      updateMeasurementFieldUseCase: updateMeasurementField,
+      deleteMeasurementFieldUseCase: deleteMeasurementField,
+      toggleFieldActiveUseCase: toggleFieldActive,
+    ),
+    permanent: true,
+  );
+
+  // 4. Measurement Dependencies
   final measurementDataSource = Get.put<MeasurementRemoteDataSource>(
     MeasurementRemoteDataSourceImpl(),
     permanent: true,

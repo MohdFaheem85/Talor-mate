@@ -10,7 +10,9 @@ class MeasurementRepositoryImpl implements MeasurementRepository {
 
   @override
   Stream<List<MeasurementEntity>> getMeasurements(String userId, String customerId) {
-    return remoteDataSource.getMeasurements(userId, customerId);
+    return remoteDataSource
+        .getMeasurements(userId, customerId)
+        .map((models) => models.map<MeasurementEntity>((m) => m).toList());
   }
 
   @override

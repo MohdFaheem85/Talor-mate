@@ -10,7 +10,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   Stream<List<CustomerEntity>> getCustomers(String userId) {
-    return remoteDataSource.getCustomers(userId);
+    return remoteDataSource
+        .getCustomers(userId)
+        .map((models) => models.map<CustomerEntity>((m) => m).toList());
   }
 
   @override

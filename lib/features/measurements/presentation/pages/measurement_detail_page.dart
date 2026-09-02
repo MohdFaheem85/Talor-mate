@@ -52,7 +52,7 @@ class MeasurementDetailPage extends StatelessWidget {
             children: [
               // Details Summary
               Card(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                 child: Padding(
                   padding: const EdgeInsets.all(AppDimensions.paddingMedium),
                   child: Column(
@@ -62,6 +62,14 @@ class MeasurementDetailPage extends StatelessWidget {
                         children: [
                           const Text('Recorded Date:', style: TextStyle(fontWeight: FontWeight.w600)),
                           Text(_formatDate(measurement.createdAt)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Clothing Type:', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text(measurement.clothingType),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -105,20 +113,29 @@ class MeasurementDetailPage extends StatelessWidget {
               const Divider(),
               const SizedBox(height: 16),
 
-              // Display values grid
+              // Display values grid based on keys stored in measurement values
               Obx(() {
                 final targetUnit = displayUnit.value;
                 final values = measurement.values;
-                final fields = MeasurementFields.getFieldsForType(measurement.clothingType);
+                final fieldKeys = values.keys.toList();
+
+                if (fieldKeys.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text('No measurement values recorded in this entry.'),
+                    ),
+                  );
+                }
 
                 return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: fields.length,
+                  itemCount: fieldKeys.length,
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
-                    final field = fields[index];
-                    final originalValue = values[field];
+                    final fieldKey = fieldKeys[index];
+                    final originalValue = values[fieldKey];
 
                     String displayValueStr = '-';
                     if (originalValue != null) {
@@ -138,7 +155,7 @@ class MeasurementDetailPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            MeasurementFields.getFieldLabel(field),
+                            MeasurementFields.getFieldLabel(fieldKey),
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                           ),
                           Text(

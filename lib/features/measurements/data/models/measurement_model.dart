@@ -4,6 +4,7 @@ import '../../domain/entities/measurement_entity.dart';
 class MeasurementModel extends MeasurementEntity {
   const MeasurementModel({
     required super.id,
+    super.clothingTypeId,
     required super.clothingType,
     required super.unit,
     required super.values,
@@ -20,9 +21,15 @@ class MeasurementModel extends MeasurementEntity {
       return MapEntry(key, (val as num).toDouble());
     });
 
+    // Support both old 'clothingType' and new 'clothingTypeName'
+    final String typeName = (map['clothingTypeName'] as String?) ??
+        (map['clothingType'] as String?) ??
+        '';
+
     return MeasurementModel(
       id: doc.id,
-      clothingType: map['clothingType'] ?? '',
+      clothingTypeId: map['clothingTypeId'] as String?,
+      clothingType: typeName,
       unit: map['unit'] ?? '',
       values: parsedValues,
       createdAt: map['createdAt'] != null
@@ -37,6 +44,7 @@ class MeasurementModel extends MeasurementEntity {
   factory MeasurementModel.fromEntity(MeasurementEntity entity) {
     return MeasurementModel(
       id: entity.id,
+      clothingTypeId: entity.clothingTypeId,
       clothingType: entity.clothingType,
       unit: entity.unit,
       values: entity.values,
@@ -47,6 +55,8 @@ class MeasurementModel extends MeasurementEntity {
 
   Map<String, dynamic> toCreateMap() {
     return {
+      if (clothingTypeId != null) 'clothingTypeId': clothingTypeId,
+      'clothingTypeName': clothingType,
       'clothingType': clothingType,
       'unit': unit,
       'values': values,
@@ -57,6 +67,8 @@ class MeasurementModel extends MeasurementEntity {
 
   Map<String, dynamic> toUpdateMap() {
     return {
+      if (clothingTypeId != null) 'clothingTypeId': clothingTypeId,
+      'clothingTypeName': clothingType,
       'clothingType': clothingType,
       'unit': unit,
       'values': values,

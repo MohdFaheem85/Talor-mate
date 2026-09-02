@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is authenticated and matches the requested userId
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // User document and all nested collections are isolated per user
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Customers collection
+      match /customers/{customerId} {
+        allow read, write: if isOwner(userId);
+
+        // Measurements subcollection under customer
+        match /measurements/{measurementId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+
+      // Clothing types configuration collection
+      match /clothingTypes/{clothingTypeId} {
+        allow read, write: if isOwner(userId);
+
+        // Custom measurement fields subcollection under clothing type
+        match /fields/{fieldId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+    }
+  }
+}

@@ -6,6 +6,7 @@ import '../../domain/entities/customer_entity.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/offline_banner.dart';
 
 class AddEditCustomerPage extends StatelessWidget {
   const AddEditCustomerPage({super.key});
@@ -32,6 +33,7 @@ class AddEditCustomerPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const OfflineBanner(),
                 CustomTextField(
                   label: 'Customer Name *',
                   hint: 'Enter full name',

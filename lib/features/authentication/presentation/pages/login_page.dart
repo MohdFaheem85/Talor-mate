@@ -25,7 +25,7 @@ class LoginPage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(AppDimensions.paddingLarge),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
