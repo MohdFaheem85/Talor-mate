@@ -92,11 +92,21 @@ class ClothingTypeRemoteDataSourceImpl implements ClothingTypeRemoteDataSource {
   @override
   Future<void> initializeDefaultsIfNeeded(String userId) async {
     try {
-      final existing = await _typesCol(userId).limit(1).get().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () => _typesCol(userId).limit(1).get(const GetOptions(source: Source.cache)),
-      );
-      if (existing.docs.isNotEmpty) return; // Already seeded
+      // 1. Fast check in local cache
+      try {
+        final cached = await _typesCol(userId).limit(1).get(const GetOptions(source: Source.cache));
+        if (cached.docs.isNotEmpty) return; // Already seeded in cache
+      } catch (_) {
+        // Cache miss or error, continue
+      }
+
+      // 2. Check server if reachable
+      try {
+        final serverDocs = await _typesCol(userId).limit(1).get().timeout(const Duration(seconds: 2));
+        if (serverDocs.docs.isNotEmpty) return; // Already seeded on server
+      } catch (_) {
+        // Offline or server timeout, proceed to seed
+      }
 
       final batch = _firestore.batch();
 

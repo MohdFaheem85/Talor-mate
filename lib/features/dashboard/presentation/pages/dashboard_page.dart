@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
 import 'package:tailormate/features/customers/presentation/controllers/customer_controller.dart';
+import 'package:tailormate/features/customers/presentation/widgets/customer_card.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/routes/app_pages.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -46,7 +47,7 @@ class DashboardPage extends StatelessWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            // Firestore sync happens automatically, but we trigger a reactive update
+            // Trigger reactive update across cached/synced customers
             customerCtrl.allCustomers.refresh();
           },
           child: SingleChildScrollView(
@@ -67,7 +68,9 @@ class DashboardPage extends StatelessWidget {
                           : null,
                       child: dashboardCtrl.userPhotoUrl == null
                           ? Text(
-                              dashboardCtrl.userDisplayName[0].toUpperCase(),
+                              dashboardCtrl.userDisplayName.isNotEmpty
+                                  ? dashboardCtrl.userDisplayName[0].toUpperCase()
+                                  : 'T',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -99,31 +102,46 @@ class DashboardPage extends StatelessWidget {
                 // Stats and Quick Actions
                 Row(
                   children: [
-                    // Total Customers Card
+                    // Total Customers Card (tap to View All Customers)
                     Expanded(
                       child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppDimensions.paddingMedium),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.people_outline,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 28,
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Total Customers',
-                                style: TextStyle(fontSize: 14, color: Colors.grey),
-                              ),
-                              Obx(() {
-                                return Text(
-                                  '${dashboardCtrl.totalCustomers.value}',
-                                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                                );
-                              }),
-                            ],
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => Get.toNamed(AppRoutes.customers),
+                          borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Icon(
+                                      Icons.people_outline,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      size: 28,
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 13,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Total Customers',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                                ),
+                                Obx(() {
+                                  return Text(
+                                    '${dashboardCtrl.totalCustomers.value}',
+                                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                                  );
+                                }),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -165,100 +183,85 @@ class DashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Search Bar
-                TextField(
-                  controller: customerCtrl.searchController,
-                  onChanged: (val) => customerCtrl.searchQuery.value = val,
-                  decoration: InputDecoration(
-                    hintText: 'Search customer by name or phone...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: Obx(() {
-                      if (customerCtrl.searchQuery.value.isNotEmpty) {
-                        return IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            customerCtrl.searchQuery.value = '';
-                            customerCtrl.searchController.clear();
-                            FocusScope.of(context).unfocus();
-                          },
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // List header: Search Results vs Recent Customers
+                // Recent Customers Section
                 Obx(() {
-                  final isSearching = customerCtrl.searchQuery.value.isNotEmpty;
-                  return Text(
-                    isSearching ? 'Search Results' : 'Recent Customers',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  );
-                }),
-                const SizedBox(height: 12),
+                  final recentList = dashboardCtrl.recentCustomers;
+                  final hasCustomers = recentList.isNotEmpty;
+                  final totalCount = dashboardCtrl.totalCustomerCount;
 
-                // Content list
-                Obx(() {
-                  final isSearching = customerCtrl.searchQuery.value.isNotEmpty;
-                  final list = isSearching
-                      ? customerCtrl.filteredCustomers
-                      : dashboardCtrl.recentCustomers;
-
-                  if (list.isEmpty) {
-                    if (isSearching) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Center(
-                          child: Text(
-                            'No matching customers found.',
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
-                        ),
-                      );
-                    } else {
-                      return EmptyState(
-                        icon: Icons.people_outline,
-                        title: 'No Customers Yet',
-                        description: 'Add your first customer to start managing their clothing measurements.',
-                        actionText: 'Add Customer',
-                        onActionPressed: () => Get.toNamed(AppRoutes.addCustomer, arguments: null),
-                      );
-                    }
+                  if (!hasCustomers) {
+                    // Empty state when there are 0 customers (No "View All" shown)
+                    return EmptyState(
+                      icon: Icons.people_outline,
+                      title: 'No Customers Yet',
+                      description: 'Add your first customer to start managing their clothing measurements.',
+                      actionText: 'Add Customer',
+                      onActionPressed: () => Get.toNamed(AppRoutes.addCustomer, arguments: null),
+                    );
                   }
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: list.length,
-                    itemBuilder: (context, index) {
-                      final customer = list[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                            child: Text(
-                              customer.name[0].toUpperCase(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.secondary,
-                              ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header Row: Recent Customers                     View All →
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Recent Customers',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          TextButton(
+                            onPressed: () => Get.toNamed(AppRoutes.customers),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'View All',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(Icons.arrow_forward, size: 16),
+                              ],
                             ),
                           ),
-                          title: Text(
-                            customer.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Limited to at most 5 recent customer cards
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: recentList.length,
+                        itemBuilder: (context, index) {
+                          final customer = recentList[index];
+                          return CustomerCard(customer: customer);
+                        },
+                      ),
+
+                      // Optional bottom link if more than 5 customers exist
+                      if (totalCount > 5) ...[
+                        const SizedBox(height: 4),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: () => Get.toNamed(AppRoutes.customers),
+                            icon: const Icon(Icons.people_outline, size: 18),
+                            label: Text(
+                              'View All $totalCount Customers →',
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
                           ),
-                          subtitle: Text(customer.phone),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            Get.toNamed(AppRoutes.customerDetail, arguments: customer);
-                          },
                         ),
-                      );
-                    },
+                      ],
+                    ],
                   );
                 }),
               ],

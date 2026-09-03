@@ -10,7 +10,11 @@ class DashboardController extends GetxController {
   // Reactive Stats
   RxInt get totalCustomers => _customerController.allCustomers.length.obs;
 
-  // RxList for Recent Customers
+  bool get hasCustomers => _customerController.allCustomers.isNotEmpty;
+  bool get hasMoreThanFive => _customerController.allCustomers.length > 5;
+  int get totalCustomerCount => _customerController.allCustomers.length;
+
+  // Strictly limited to latest 5 customers
   List<CustomerEntity> get recentCustomers {
     final list = _customerController.allCustomers;
     if (list.length > 5) {

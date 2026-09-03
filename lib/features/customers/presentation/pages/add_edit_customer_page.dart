@@ -77,8 +77,8 @@ class AddEditCustomerPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
-                  label: 'Address (Optional)',
-                  hint: 'Enter shop/home address',
+                  label: 'Location / Address (Optional)',
+                  hint: 'E.g., City, Area, or full address',
                   controller: controller.addressController,
                   prefixIcon: Icons.location_on_outlined,
                   maxLines: 2,

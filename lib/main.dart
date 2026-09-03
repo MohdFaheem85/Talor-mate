@@ -16,6 +16,8 @@ import 'features/authentication/domain/repositories/auth_repository.dart';
 import 'features/authentication/domain/usecases/sign_in_with_google.dart';
 import 'features/authentication/domain/usecases/sign_out.dart';
 import 'features/authentication/domain/usecases/observe_auth_state.dart';
+import 'features/authentication/domain/usecases/get_user_profile.dart';
+import 'features/authentication/domain/usecases/get_current_user.dart';
 import 'features/authentication/presentation/controllers/auth_controller.dart';
 
 // Customers Layer Imports
@@ -92,12 +94,16 @@ void _setupDependencyInjection() {
   final signInWithGoogle = SignInWithGoogle(authRepository);
   final signOut = SignOut(authRepository);
   final observeAuthState = ObserveAuthState(authRepository);
+  final getUserProfile = GetUserProfile(authRepository);
+  final getCurrentUser = GetCurrentUser(authRepository);
 
   Get.put(
     AuthController(
       signInWithGoogleUseCase: signInWithGoogle,
       signOutUseCase: signOut,
       observeAuthStateUseCase: observeAuthState,
+      getUserProfileUseCase: getUserProfile,
+      getCurrentUserUseCase: getCurrentUser,
     ),
     permanent: true,
   );

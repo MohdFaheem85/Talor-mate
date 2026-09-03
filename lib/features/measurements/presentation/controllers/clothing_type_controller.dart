@@ -38,12 +38,41 @@ class ClothingTypeController extends GetxController {
     required this.toggleFieldActiveUseCase,
   });
 
+  static List<ClothingTypeEntity> get canonicalDefaultTypes => [
+    ClothingTypeEntity(
+      id: 'default_shirt',
+      name: 'Shirt',
+      isDefault: true,
+      isActive: true,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+    ),
+    ClothingTypeEntity(
+      id: 'default_pant',
+      name: 'Pant',
+      isDefault: true,
+      isActive: true,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+    ),
+    ClothingTypeEntity(
+      id: 'default_kurta',
+      name: 'Kurta',
+      isDefault: true,
+      isActive: true,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+    ),
+  ];
+
   String? _userId;
   StreamSubscription<List<ClothingTypeEntity>>? _typesSubscription;
   StreamSubscription<List<MeasurementFieldEntity>>? _formFieldsSubscription;
   StreamSubscription<List<MeasurementFieldEntity>>? _settingsFieldsSubscription;
 
-  final RxList<ClothingTypeEntity> clothingTypes = <ClothingTypeEntity>[].obs;
+  final RxList<ClothingTypeEntity> clothingTypes = <ClothingTypeEntity>[
+    ...canonicalDefaultTypes,
+  ].obs;
   final Rxn<ClothingTypeEntity> selectedClothingType = Rxn<ClothingTypeEntity>();
   final RxBool isLoadingTypes = false.obs;
 
@@ -70,14 +99,14 @@ class ClothingTypeController extends GetxController {
     super.onInit();
     final authController = Get.find<AuthController>();
     ever(authController.rxUser, (user) {
-      if (user != null) {
+      if (user != null && user.isActive) {
         _initForUser(user.uid);
       } else {
         clearData();
       }
     });
     final currentUser = authController.rxUser.value;
-    if (currentUser != null) {
+    if (currentUser != null && currentUser.isActive) {
       _initForUser(currentUser.uid);
     }
   }
@@ -86,17 +115,34 @@ class ClothingTypeController extends GetxController {
     if (_userId == userId) return;
     _userId = userId;
 
+    if (clothingTypes.isEmpty) {
+      clothingTypes.assignAll(canonicalDefaultTypes);
+    }
+    if (selectedClothingType.value == null && clothingTypes.isNotEmpty) {
+      final defaultType = clothingTypes.firstWhereOrNull(
+        (t) => t.name.toLowerCase() == 'shirt',
+      ) ?? clothingTypes.first;
+      selectClothingType(defaultType);
+    }
+
     isLoadingTypes.value = true;
     _typesSubscription?.cancel();
     _typesSubscription = getClothingTypesUseCase(userId).listen(
       (types) {
-        clothingTypes.value = types;
+        if (types.isNotEmpty) {
+          clothingTypes.assignAll(types);
+        } else {
+          clothingTypes.assignAll(canonicalDefaultTypes);
+        }
         isLoadingTypes.value = false;
-        if (selectedClothingType.value == null && types.isNotEmpty) {
-          final defaultType = types.firstWhereOrNull(
-            (t) => t.name.toLowerCase() == 'shirt',
-          ) ?? types.first;
-          selectClothingType(defaultType);
+
+        final current = selectedClothingType.value;
+        if (current == null || current.id.startsWith('default_')) {
+          final targetName = current?.name.toLowerCase() ?? 'shirt';
+          final matching = clothingTypes.firstWhereOrNull(
+            (t) => t.name.toLowerCase() == targetName,
+          ) ?? clothingTypes.first;
+          selectClothingType(matching);
         }
       },
       onError: (e) {
@@ -117,7 +163,7 @@ class ClothingTypeController extends GetxController {
     _typesSubscription = null;
     _formFieldsSubscription = null;
     _settingsFieldsSubscription = null;
-    clothingTypes.clear();
+    clothingTypes.assignAll(canonicalDefaultTypes);
     currentFields.clear();
     settingsFields.clear();
     selectedClothingType.value = null;
@@ -126,7 +172,6 @@ class ClothingTypeController extends GetxController {
 
   void selectClothingType(ClothingTypeEntity type) {
     final userId = _userId;
-    if (userId == null) return;
     if (selectedClothingType.value?.id == type.id && currentFields.isNotEmpty) return;
 
     selectedClothingType.value = type;
@@ -152,6 +197,9 @@ class ClothingTypeController extends GetxController {
       currentFields.clear();
       isFieldsLoading.value = true;
     }
+
+    if (userId == null) return;
+    if (type.id.startsWith('default_')) return;
 
     _formFieldsSubscription?.cancel();
     _formFieldsSubscription = getMeasurementFieldsUseCase(userId, type.id).listen(

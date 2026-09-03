@@ -52,9 +52,9 @@ class MeasurementController extends GetxController {
   void onInit() {
     super.onInit();
     
-    // Automatically cancel listeners and clear state when signing out
+    // Automatically cancel listeners and clear state when signing out or inactive
     _authWorker = ever(_authController.rxUser, (user) {
-      if (user == null) {
+      if (user == null || !user.isActive) {
         clearData();
       }
     });
@@ -271,22 +271,17 @@ class MeasurementController extends GetxController {
               (t) => t.name.toLowerCase() == 'shirt',
             ) ??
             clothingTypeCtrl.clothingTypes.firstOrNull ??
-            clothingTypeCtrl.selectedClothingType.value;
+            clothingTypeCtrl.selectedClothingType.value ??
+            ClothingTypeController.canonicalDefaultTypes.first;
 
-        if (defaultType != null) {
-          selectedClothingTypeId.value = defaultType.id;
-          selectedClothingType.value = defaultType.name;
-          clothingTypeCtrl.selectClothingType(defaultType);
-          syncFieldsFromEntityList(
-            clothingTypeCtrl.currentFields,
-            initialValues: null,
-            preserveTypedValues: false,
-          );
-        } else {
-          selectedClothingTypeId.value = null;
-          selectedClothingType.value = 'Shirt';
-          _fallbackInitializeFieldControllers('shirt', null);
-        }
+        selectedClothingTypeId.value = defaultType.id;
+        selectedClothingType.value = defaultType.name;
+        clothingTypeCtrl.selectClothingType(defaultType);
+        syncFieldsFromEntityList(
+          clothingTypeCtrl.currentFields,
+          initialValues: null,
+          preserveTypedValues: false,
+        );
       } else {
         selectedClothingTypeId.value = null;
         selectedClothingType.value = 'Shirt';

@@ -45,7 +45,10 @@ class AddEditMeasurementPage extends StatelessWidget {
                 
                 // Horizontal scrolling clothing type selector
                 Obx(() {
-                  final types = clothingTypeCtrl.clothingTypes;
+                  final rawTypes = clothingTypeCtrl.clothingTypes;
+                  final types = rawTypes.isNotEmpty
+                      ? rawTypes
+                      : ClothingTypeController.canonicalDefaultTypes;
                   final currentSelected = clothingTypeCtrl.selectedClothingType.value;
 
                   return SizedBox(
@@ -251,20 +254,23 @@ class AddEditMeasurementPage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
       onTap: disabled ? null : onTap,
       borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         width: 88,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.12)
-              : theme.cardColor,
+              ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.25 : 0.12)
+              : (isDark ? const Color(0xFF1E1E1E) : theme.cardColor),
           border: Border.all(
             color: isSelected
                 ? theme.colorScheme.primary
-                : Colors.grey.shade300,
+                : (isDark ? Colors.white24 : Colors.grey.shade300),
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
@@ -274,10 +280,10 @@ class AddEditMeasurementPage extends StatelessWidget {
           children: [
             Icon(
               _getIconForType(type.name),
-              size: 22,
+              size: 24,
               color: isSelected
                   ? theme.colorScheme.primary
-                  : Colors.grey.shade600,
+                  : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             ),
             const SizedBox(height: 4),
             Text(
@@ -290,7 +296,7 @@ class AddEditMeasurementPage extends StatelessWidget {
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : Colors.grey.shade800,
+                    : (isDark ? Colors.grey.shade200 : Colors.grey.shade800),
               ),
             ),
           ],
@@ -303,26 +309,38 @@ class AddEditMeasurementPage extends StatelessWidget {
     BuildContext context,
     ClothingTypeController clothingTypeCtrl,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
       onTap: () => _showAddClothingTypeDialog(context, clothingTypeCtrl),
       borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
       child: Container(
-        width: 72,
+        width: 84,
         decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF161616) : Colors.grey.shade50,
           border: Border.all(
-            color: Colors.grey.shade400,
+            color: isDark ? Colors.white24 : Colors.grey.shade400,
             style: BorderStyle.solid,
           ),
           borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMedium),
         ),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_circle_outline, color: Colors.grey, size: 24),
-            SizedBox(height: 4),
+            Icon(
+              Icons.add_circle_outline,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
             Text(
               'Add',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+              ),
             ),
           ],
         ),
@@ -335,7 +353,7 @@ class AddEditMeasurementPage extends StatelessWidget {
       case 'shirt':
         return Icons.checkroom;
       case 'pant':
-        return Icons.accessibility;
+        return Icons.accessibility_new;
       case 'kurta':
         return Icons.brush;
       case 'blazer':

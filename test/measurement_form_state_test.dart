@@ -13,6 +13,8 @@ import 'package:tailormate/features/authentication/presentation/controllers/auth
 import 'package:tailormate/features/authentication/domain/usecases/sign_in_with_google.dart';
 import 'package:tailormate/features/authentication/domain/usecases/sign_out.dart';
 import 'package:tailormate/features/authentication/domain/usecases/observe_auth_state.dart';
+import 'package:tailormate/features/authentication/domain/usecases/get_user_profile.dart';
+import 'package:tailormate/features/authentication/domain/usecases/get_current_user.dart';
 import 'package:tailormate/features/authentication/domain/repositories/auth_repository.dart';
 import 'package:tailormate/features/authentication/domain/entities/user_entity.dart';
 
@@ -33,6 +35,8 @@ class MockAuthRepository implements AuthRepository {
     uid: 'test_uid',
     name: 'Test User',
     email: 'test@example.com',
+    isActive: true,
+    role: 'user',
     createdAt: _now,
     updatedAt: _now,
   );
@@ -45,6 +49,8 @@ class MockAuthRepository implements AuthRepository {
   Future<UserEntity?> signInWithGoogle() async => _mockUser;
   @override
   Future<void> signOut() async {}
+  @override
+  Future<UserEntity?> getUserProfile(String uid) async => _mockUser;
 }
 
 void main() {
@@ -60,6 +66,8 @@ void main() {
       signInWithGoogleUseCase: SignInWithGoogle(authRepo),
       signOutUseCase: SignOut(authRepo),
       observeAuthStateUseCase: ObserveAuthState(authRepo),
+      getUserProfileUseCase: GetUserProfile(authRepo),
+      getCurrentUserUseCase: GetCurrentUser(authRepo),
     ));
 
     final measurementRepo = MockMeasurementRepository();

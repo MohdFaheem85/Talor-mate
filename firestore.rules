@@ -1,33 +1,69 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if the user is authenticated and matches the requested userId
+
+    // Helper: Verify user is authenticated with Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Check if caller's UID matches the path userId
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper: Check if caller is approved by verifying users/{userId} exists and isActive == true
+    function isApprovedUser(userId) {
+      return isOwner(userId)
+        && exists(/databases/$(database)/documents/users/$(userId))
+        && get(/databases/$(database)/documents/users/$(userId)).data.isActive == true;
+    }
+
+    // Helper: Check if caller has the 'owner' role and is active
+    function isAppOwner() {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
     }
 
     // User document and all nested collections are isolated per user
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // Users can read their own profile to verify their status.
+      // App owners can read any user profile.
+      allow read: if isOwner(userId) || isAppOwner();
+
+      // Only the application owner can create new user records (prevents unauthorized self-registration)
+      allow create: if isAppOwner();
+
+      // The owner can modify any user profile.
+      // An approved user can only update cosmetic fields (name, photoUrl, updatedAt).
+      // Crucially: users CANNOT change their own role, isActive status, or email.
+      allow update: if isAppOwner() || (
+        isApprovedUser(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photoUrl', 'updatedAt'])
+      );
+
+      // Only the application owner can delete user authorization documents
+      allow delete: if isAppOwner();
 
       // Customers collection
       match /customers/{customerId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isApprovedUser(userId);
 
         // Measurements subcollection under customer
         match /measurements/{measurementId} {
-          allow read, write: if isOwner(userId);
+          allow read, write: if isApprovedUser(userId);
         }
       }
 
       // Clothing types configuration collection
       match /clothingTypes/{clothingTypeId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isApprovedUser(userId);
 
         // Custom measurement fields subcollection under clothing type
         match /fields/{fieldId} {
-          allow read, write: if isOwner(userId);
+          allow read, write: if isApprovedUser(userId);
         }
       }
     }
