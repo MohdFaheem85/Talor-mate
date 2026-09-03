@@ -6,6 +6,7 @@ import 'package:tailormate/features/measurements/presentation/controllers/measur
 import '../../../../core/constants/constants.dart';
 import '../../../../core/routes/app_pages.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/offline_banner.dart';
 
 class CustomerDetailPage extends StatelessWidget {
   const CustomerDetailPage({super.key});
@@ -19,13 +20,10 @@ class CustomerDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final CustomerEntity initialCustomer = Get.arguments as CustomerEntity;
     
-    // Bind detail controller
+    // Bind detail controller (handles measurement history lifecycle)
     final detailCtrl = Get.put(CustomerDetailPageController(initialCustomer));
     final customerCtrl = Get.find<CustomerController>();
     final measurementCtrl = Get.find<MeasurementController>();
-
-    // Load measurements for this customer
-    measurementCtrl.loadHistory(initialCustomer.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,6 +44,10 @@ class CustomerDetailPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(AppDimensions.paddingMedium, AppDimensions.paddingSmall, AppDimensions.paddingMedium, 0),
+              child: OfflineBanner(),
+            ),
             // Customer Info Card
             Obx(() {
               final c = detailCtrl.customer.value;
@@ -53,7 +55,7 @@ class CustomerDetailPage extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppDimensions.paddingMedium),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                   border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
                 ),
                 child: Column(
@@ -170,19 +172,32 @@ class CustomerDetailPage extends StatelessWidget {
                     final m = history[index];
                     IconData clothingIcon;
                     String typeLabel = m.clothingType.toUpperCase();
-                    if (m.clothingType == 'shirt') {
-                      clothingIcon = Icons.checkroom;
-                    } else if (m.clothingType == 'pant') {
-                      clothingIcon = Icons.accessibility;
-                    } else {
-                      clothingIcon = Icons.brush; // Kurta fallback
+                    switch (m.clothingType.toLowerCase()) {
+                      case 'shirt':
+                        clothingIcon = Icons.checkroom;
+                        break;
+                      case 'pant':
+                        clothingIcon = Icons.accessibility;
+                        break;
+                      case 'kurta':
+                        clothingIcon = Icons.brush;
+                        break;
+                      case 'blazer':
+                      case 'suit':
+                        clothingIcon = Icons.dry_cleaning;
+                        break;
+                      case 'sherwani':
+                        clothingIcon = Icons.auto_awesome;
+                        break;
+                      default:
+                        clothingIcon = Icons.style;
                     }
 
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           child: Icon(clothingIcon, color: Theme.of(context).colorScheme.primary),
                         ),
                         title: Text(

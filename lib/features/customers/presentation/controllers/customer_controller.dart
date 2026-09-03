@@ -7,6 +7,8 @@ import '../../domain/usecases/add_customer.dart';
 import '../../domain/usecases/update_customer.dart';
 import '../../domain/usecases/delete_customer.dart';
 import 'package:tailormate/features/authentication/presentation/controllers/auth_controller.dart';
+import 'package:tailormate/features/measurements/presentation/controllers/measurement_controller.dart';
+import '../../../../core/routes/app_pages.dart';
 
 class CustomerController extends GetxController {
   final GetCustomers getCustomersUseCase;
@@ -46,10 +48,15 @@ class CustomerController extends GetxController {
     
     // Listen to auth state changes to dynamically bind the customers stream
     ever(_authController.rxUser, (user) {
-      if (user != null) {
+      if (user != null && user.isActive) {
         _customersSubscription?.cancel();
         _customersSubscription = getCustomersUseCase(user.uid).listen(
           (customers) {
+            customers.sort((a, b) {
+              final cmp = b.updatedAt.compareTo(a.updatedAt);
+              if (cmp != 0) return cmp;
+              return b.createdAt.compareTo(a.createdAt);
+            });
             allCustomers.value = customers;
           },
           onError: (error) {
@@ -57,19 +64,21 @@ class CustomerController extends GetxController {
           },
         );
       } else {
-        _customersSubscription?.cancel();
-        _customersSubscription = null;
-        allCustomers.clear();
-        filteredCustomers.clear();
+        clearData();
       }
     });
 
     // Fallback: Bind stream immediately if user is already logged in at initialization
-    final userId = _authController.rxUser.value?.uid;
-    if (userId != null) {
+    final currentUser = _authController.rxUser.value;
+    if (currentUser != null && currentUser.isActive) {
       _customersSubscription?.cancel();
-      _customersSubscription = getCustomersUseCase(userId).listen(
+      _customersSubscription = getCustomersUseCase(currentUser.uid).listen(
         (customers) {
+          customers.sort((a, b) {
+            final cmp = b.updatedAt.compareTo(a.updatedAt);
+            if (cmp != 0) return cmp;
+            return b.createdAt.compareTo(a.createdAt);
+          });
           allCustomers.value = customers;
         },
         onError: (error) {
@@ -83,9 +92,16 @@ class CustomerController extends GetxController {
     debounce(searchQuery, (_) => _filterCustomers(), time: const Duration(milliseconds: 300));
   }
 
+  void clearData() {
+    _customersSubscription?.cancel();
+    _customersSubscription = null;
+    allCustomers.clear();
+    filteredCustomers.clear();
+  }
+
   @override
   void onClose() {
-    _customersSubscription?.cancel();
+    clearData();
     nameController.dispose();
     phoneController.dispose();
     emailController.dispose();
@@ -103,13 +119,15 @@ class CustomerController extends GetxController {
       final matches = allCustomers.where((customer) {
         final nameMatch = customer.name.toLowerCase().contains(query);
         final phoneMatch = customer.phone.contains(query);
-        return nameMatch || phoneMatch;
+        final locationMatch = customer.address?.toLowerCase().contains(query) ?? false;
+        return nameMatch || phoneMatch || locationMatch;
       }).toList();
       filteredCustomers.assignAll(matches);
     }
   }
 
   void initForm(CustomerEntity? customer) {
+    isLoading.value = false;
     if (customer != null) {
       nameController.text = customer.name;
       phoneController.text = customer.phone;
@@ -207,7 +225,7 @@ class CustomerController extends GetxController {
     try {
       isLoading.value = true;
       await deleteCustomerUseCase(userId, customerId);
-      Get.until((route) => Get.currentRoute == '/dashboard');
+      Get.until((route) => Get.currentRoute == AppRoutes.dashboard || Get.currentRoute == AppRoutes.customers);
       Get.snackbar('Success', 'Customer record deleted.');
     } catch (e) {
       Get.snackbar('Error', 'Failed to delete customer.');
@@ -224,5 +242,21 @@ class CustomerDetailPageController extends GetxController {
 
   void updateCustomer(CustomerEntity updated) {
     customer.value = updated;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (Get.isRegistered<MeasurementController>()) {
+      Get.find<MeasurementController>().loadHistory(customer.value.id);
+    }
+  }
+
+  @override
+  void onClose() {
+    if (Get.isRegistered<MeasurementController>()) {
+      Get.find<MeasurementController>().cancelHistorySubscription();
+    }
+    super.onClose();
   }
 }

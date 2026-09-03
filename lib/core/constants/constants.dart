@@ -70,7 +70,7 @@ class MeasurementFields {
   }
 
   static String getFieldLabel(String field) {
-    // Capitalize and format fields nicely
+    if (field.isEmpty) return field;
     switch (field) {
       case 'length': return 'Length';
       case 'chest': return 'Chest';
@@ -87,7 +87,12 @@ class MeasurementFields {
       case 'bottom': return 'Bottom';
       case 'inseam': return 'Inseam';
       case 'rise': return 'Rise';
-      default: return field[0].toUpperCase() + field.substring(1);
+      default:
+        return field
+            .split(RegExp(r'[_\s]+'))
+            .where((s) => s.isNotEmpty)
+            .map((s) => s[0].toUpperCase() + s.substring(1))
+            .join(' ');
     }
   }
 }

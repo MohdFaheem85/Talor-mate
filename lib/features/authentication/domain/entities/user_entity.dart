@@ -3,6 +3,8 @@ class UserEntity {
   final String name;
   final String email;
   final String? photoUrl;
+  final bool isActive;
+  final String role;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -11,7 +13,11 @@ class UserEntity {
     required this.name,
     required this.email,
     this.photoUrl,
+    this.isActive = false,
+    this.role = 'user',
     required this.createdAt,
     required this.updatedAt,
   });
+
+  bool get isOwner => role == 'owner';
 }

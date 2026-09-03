@@ -26,7 +26,7 @@ class SplashPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppDimensions.paddingLarge),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -49,7 +49,7 @@ class SplashPage extends StatelessWidget {
               Text(
                 'Digital Measurement Book',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 16,
                   fontWeight: FontWeight.w300,
                 ),
